@@ -12,32 +12,26 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
 .wrap{width:100%;max-width:1200px;margin:0 auto}
 
 /* LOADING */
-#loading-screen{position:fixed;inset:0;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px}
-#loading-screen.hidden{opacity:0;pointer-events:none;transition:opacity .4s}
+#loading-screen{position:fixed;inset:0;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;transition:opacity .4s}
+#loading-screen.hidden{opacity:0;pointer-events:none}
 .spinner{width:40px;height:40px;border:3px solid #333;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-msg{color:#888;font-size:14px;font-weight:500}
 
-/* AUTH ERROR */
-#auth-screen{position:fixed;inset:0;background:#1a1a1a;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9998;padding:24px}
-#auth-screen.show{display:flex}
-.auth-card{background:#fff;border-radius:20px;padding:36px 40px;max-width:460px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.5)}
-.auth-logo-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:24px}
-.auth-logo-box{width:110px;height:36px;border:1.5px dashed #ddd;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;font-weight:500}
-.auth-divider{font-size:12px;color:#ccc;font-weight:500}
-.auth-tp{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#111}
-.auth-tp-star{color:#00B67A;font-size:18px}
-.auth-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#111;margin-bottom:10px}
-.auth-sub{font-size:13px;color:#666;line-height:1.7;margin-bottom:24px}
-.auth-steps{text-align:left;background:#f8f8f8;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#333;line-height:2}
-.auth-steps strong{color:#111}
-.auth-steps a{color:#007A5E;font-weight:600;text-decoration:none}
-.auth-steps a:hover{text-decoration:underline}
-.auth-retry{width:100%;background:#111;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
-.auth-retry:hover{background:#333}
-.auth-note{margin-top:12px;font-size:11px;color:#aaa;line-height:1.6}
-.err-box{margin-top:12px;background:#fef9f9;border:1px solid #f5d0d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#A32D2D;text-align:left;display:none}
-.err-box.show{display:block}
+/* ERROR */
+#error-screen{position:fixed;inset:0;background:#1a1a1a;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9998;padding:24px}
+#error-screen.show{display:flex}
+.error-card{background:#fff;border-radius:20px;padding:36px 40px;max-width:480px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.5)}
+.error-logo-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:24px}
+.error-logo-box{width:110px;height:36px;border:1.5px dashed #ddd;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;font-weight:500}
+.error-tp{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#111}
+.error-tp-star{color:#00B67A;font-size:18px}
+.error-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#111;margin-bottom:10px}
+.error-sub{font-size:13px;color:#666;line-height:1.7;margin-bottom:20px}
+.error-detail{background:#fef9f9;border:1px solid #f5d0d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#A32D2D;text-align:left;margin-bottom:20px;display:none}
+.error-detail.show{display:block}
+.btn-retry{width:100%;background:#111;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-retry:hover{background:#333}
 
 /* HEADER */
 .dash-header{background:#fff;border-radius:20px;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,0,0,0.35)}
@@ -99,7 +93,7 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
 .kpi-value{font-size:32px;font-weight:700;color:#111;line-height:1;margin-bottom:4px}
 .kpi-sub{font-size:12px;color:#888}
 
-/* CHART / BAR / STAR / PILL / TABLE */
+/* MISC */
 .chart-wrap{position:relative;width:100%}
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:#666}
 .legend-item{display:flex;align-items:center;gap:5px}
@@ -144,29 +138,18 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
   <div class="loading-msg" id="loading-msg">Carregando dados da planilha…</div>
 </div>
 
-<!-- AUTH ERROR -->
-<div id="auth-screen">
-  <div class="auth-card">
-    <div class="auth-logo-row">
-      <div class="auth-logo-box">Logo Hotmart</div>
-      <span class="auth-divider">×</span>
-      <div class="auth-tp"><span class="auth-tp-star">★</span> TrustPilot</div>
+<!-- ERROR -->
+<div id="error-screen">
+  <div class="error-card">
+    <div class="error-logo-row">
+      <div class="error-logo-box">Logo Hotmart</div>
+      <span style="font-size:12px;color:#ccc;font-weight:500">×</span>
+      <div class="error-tp"><span class="error-tp-star">★</span> TrustPilot</div>
     </div>
-    <div class="auth-title">Autenticação necessária</div>
-    <div class="auth-sub">O dashboard não conseguiu acessar a planilha.<br>Siga os passos abaixo para liberar o acesso:</div>
-    <div class="auth-steps">
-      <strong>1.</strong> Abra o Apps Script em uma nova aba:<br>
-      &nbsp;&nbsp;<a id="link-apps-script" href="https://script.google.com/a/macros/hotmart.com/s/AKfycbyMrm_q1-IrAoMhD60C7IaZd2jcgUcz9AE4ic6sa67mz8UDEcEOmXytz1spxXLrB7wFXg/exec" target="_blank">Abrir URL do Apps Script ↗</a><br>
-      <strong>2.</strong> Faça login com sua conta <strong>@hotmart.com</strong><br>
-      <strong>3.</strong> Autorize o acesso quando solicitado<br>
-      <strong>4.</strong> Volte aqui e clique no botão abaixo
-    </div>
-    <button class="auth-retry" onclick="retryFetch()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Já autorizei — carregar dashboard
-    </button>
-    <div class="err-box" id="err-box"></div>
-    <div class="auth-note">Apenas contas <strong>@hotmart.com</strong> têm acesso a este dashboard.</div>
+    <div class="error-title">Não foi possível carregar</div>
+    <div class="error-sub">Ocorreu um erro ao buscar os dados da planilha.<br>Verifique se o Apps Script está implantado corretamente.</div>
+    <div class="error-detail" id="error-detail"></div>
+    <button class="btn-retry" onclick="retryLoad()">↺ Tentar novamente</button>
   </div>
 </div>
 
@@ -212,8 +195,10 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
       </div>
       <div class="filter-group"><label>Sentimento</label>
         <select id="f-sentimento" onchange="applyFilters()">
-          <option value="">Todos</option><option value="Negativo">Negativo (1–2★)</option>
-          <option value="Neutro">Neutro (3★)</option><option value="Positivo">Positivo (4–5★)</option>
+          <option value="">Todos</option>
+          <option value="Negativo">Negativo (1–2★)</option>
+          <option value="Neutro">Neutro (3★)</option>
+          <option value="Positivo">Positivo (4–5★)</option>
         </select>
       </div>
     </div>
@@ -298,7 +283,7 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
     </div>
   </div>
 
-  <!-- PERFIL -->
+  <!-- PERFIL & IDIOMA -->
   <div id="tab-perfil-idioma" class="section-panel">
     <div class="section-heading">Perfil & Localização</div>
     <div class="grid-kpi" id="kpi-perfil"></div>
@@ -319,7 +304,7 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
     </div>
   </div>
 
-  <!-- INTERNOS -->
+  <!-- DADOS INTERNOS -->
   <div id="tab-internos" class="section-panel">
     <div class="section-heading">Dados Internos</div>
     <div class="grid-2">
@@ -343,11 +328,11 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
     </div>
   </div>
 
-  <!-- VISITOR -->
+  <!-- VISITOR INSIGHTS -->
   <div id="tab-visitor" class="section-panel">
     <div class="section-heading">Visitor Insights</div>
     <div class="info-note" style="background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.22);border-left:none;border-top:3px solid #111">
-      <strong>Como alimentar:</strong> Acesse <a href="https://businessapp.b2b.trustpilot.com/insights/visitor" target="_blank" style="color:#007A5E;font-weight:600">businessapp.b2b.trustpilot.com/insights/visitor ↗</a> e preencha a aba <strong>"Visitor Insights"</strong> na planilha. O dashboard atualiza automaticamente.
+      <strong>Como alimentar:</strong> Acesse <a href="https://businessapp.b2b.trustpilot.com/insights/visitor" target="_blank" style="color:#007A5E;font-weight:600">businessapp.b2b.trustpilot.com/insights/visitor ↗</a> e preencha a aba <strong>"Visitor Insights"</strong> na planilha.
     </div>
     <div class="grid-kpi" id="visitor-kpis"></div>
     <div class="card grid-full">
@@ -385,14 +370,14 @@ body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:
     TrustPilot Dashboard · Hotmart · Uso interno &nbsp;|&nbsp;
     <a href="https://docs.google.com/spreadsheets/d/14Yr7ND4E1XP-7EWNiuhzy2qpz-Gf1A_9ZiMbrgIN9Xc/edit?gid=154470158" target="_blank">Planilha de Acompanhamento</a>
   </div>
+</div>
 
-</div><!-- /.wrap -->
 <div id="toast"></div>
 
 <script>
 const API='https://script.google.com/a/macros/hotmart.com/s/AKfycbyMrm_q1-IrAoMhD60C7IaZd2jcgUcz9AE4ic6sa67mz8UDEcEOmXytz1spxXLrB7wFXg/exec';
 const REFRESH=5*60*1000;
-let RAW=[],FILTERED=[],C={};
+let RAW=[],FILTERED=[],C={},refreshTimer=null;
 
 /* UTILS */
 const pct=(v,t)=>t>0?Math.round(v/t*100):0;
@@ -415,34 +400,57 @@ const simplSP=s=>{
 const mLabel=ym=>{const[y,m]=ym.split('-');return new Date(+y,+m-1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('. ','/')};
 const toast=(msg,ok=true)=>{const t=document.getElementById('toast');t.textContent=(ok?'✓ ':'⚠ ')+msg;t.style.background=ok?'#111':'#A32D2D';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)};
 
-/* AUTH */
-function showAuth(msg){
-  document.getElementById('loading-screen').classList.add('hidden');
-  document.getElementById('auth-screen').classList.add('show');
-  if(msg){const b=document.getElementById('err-box');b.textContent=msg;b.classList.add('show')}
-}
-function retryFetch(){
-  document.getElementById('auth-screen').classList.remove('show');
-  document.getElementById('loading-screen').classList.remove('hidden');
-  fetchData(false);
-}
+/* ── JSONP FETCH ──────────────────────────────────────
+   Injeta <script> com callback= para contornar CORS.
+   Funciona com qualquer origem, sem credentials.
+────────────────────────────────────────────────────── */
+let _cbCounter=0;
+function jsonpFetch(url,timeout=15000){
+  return new Promise((resolve,reject)=>{
+    const cbName='_cb'+(_cbCounter++);
+    let timer=setTimeout(()=>{
+      cleanup();
+      reject(new Error('Timeout: o Apps Script demorou mais de '+timeout/1000+'s para responder.'));
+    },timeout);
 
-/* FETCH — sem credentials:include para evitar CORS */
-async function fetchData(silent=false){
-  try{
-    /* Tenta primeiro sem credentials */
-    let res=await fetch(API,{redirect:'follow'});
-
-    /* Se recebeu HTML (página de login do Google) = não autenticado */
-    const ct=res.headers.get('content-type')||'';
-    if(ct.includes('text/html')){
-      if(!silent)showAuth('Sessão não autenticada. Abra o link do Apps Script e faça login com sua conta @hotmart.com.');
-      else toast('Sessão expirada. Reabra o link do Apps Script.',false);
-      return;
+    function cleanup(){
+      clearTimeout(timer);
+      delete window[cbName];
+      const s=document.getElementById(cbName);
+      if(s)s.remove();
     }
 
-    const json=await res.json();
-    if(json.error){if(!silent)showAuth(json.error);return;}
+    window[cbName]=function(data){
+      cleanup();
+      resolve(data);
+    };
+
+    const script=document.createElement('script');
+    script.id=cbName;
+    script.src=url+(url.includes('?')?'&':'?')+'callback='+cbName+'&t='+Date.now();
+    script.onerror=()=>{cleanup();reject(new Error('Erro ao carregar o script do Apps Script. Verifique se a URL está correta e a implantação está ativa.'))};
+    document.head.appendChild(script);
+  });
+}
+
+/* ── LOAD ────────────────────────────────────────────── */
+function showError(msg){
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('error-screen').classList.add('show');
+  const d=document.getElementById('error-detail');
+  d.textContent=msg;d.classList.add('show');
+}
+
+function retryLoad(){
+  document.getElementById('error-screen').classList.remove('show');
+  document.getElementById('loading-screen').classList.remove('hidden');
+  loadData(false);
+}
+
+async function loadData(silent=false){
+  try{
+    if(!silent)document.getElementById('loading-msg').textContent='Carregando dados da planilha…';
+    const json=await jsonpFetch(API);
 
     RAW=json.trustpilot||[];
     populateFilters();
@@ -457,15 +465,21 @@ async function fetchData(silent=false){
       document.getElementById('badge-update').textContent=
         'Out/2025 – '+last.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})+' · Uso interno Hotmart';
     }
+
     if(!silent){
       document.getElementById('loading-screen').classList.add('hidden');
       document.getElementById('main-content').style.display='block';
-    } else toast('Dados atualizados');
+    } else {
+      toast('Dados atualizados');
+    }
+
+    /* agenda próxima atualização */
+    if(refreshTimer)clearTimeout(refreshTimer);
+    refreshTimer=setTimeout(()=>loadData(true),REFRESH);
 
   }catch(err){
-    /* CORS ou network error = não autenticado */
-    if(!silent)showAuth('Erro de conexão: '+err.message+'\n\nProvavelmente você precisa abrir e autorizar o link do Apps Script primeiro.');
-    else toast('Falha ao atualizar dados.',false);
+    if(!silent)showError(err.message);
+    else toast('Falha ao atualizar: '+err.message,false);
   }
 }
 
@@ -506,7 +520,8 @@ function resetFilters(){
 
 /* RENDER ALL */
 function renderAll(){
-  const T=FILTERED.length,neg=FILTERED.filter(r=>sent(r['Classificação'])==='Negativo').length,
+  const T=FILTERED.length,
+        neg=FILTERED.filter(r=>sent(r['Classificação'])==='Negativo').length,
         pos=FILTERED.filter(r=>sent(r['Classificação'])==='Positivo').length,
         neu=FILTERED.filter(r=>sent(r['Classificação'])==='Neutro').length;
   const avg=T>0?(FILTERED.reduce((a,r)=>{const s=parseInt(r['Classificação']);return a+(isNaN(s)?0:s)},0)/T).toFixed(1):0;
@@ -519,21 +534,20 @@ function renderAll(){
   rMonthly();rTrustScore();rStars();rSentimento();rSentMensal();rMotivos();rPerfilIdioma();rInternos();
 }
 
-/* CHARTS */
-function byMonth(field){
+function byMonth(){
   const bm={};
   FILTERED.forEach(r=>{
     const d=r['Data da avaliação']||'';if(!d)return;
     const m=d.substring(0,7);
     if(!bm[m])bm[m]={neg:0,neu:0,pos:0};
-    const s=sent(r[field||'Classificação']);
+    const s=sent(r['Classificação']);
     bm[m][s==='Negativo'?'neg':s==='Neutro'?'neu':'pos']++;
   });
   return bm;
 }
 
 function rMonthly(){
-  const bm=byMonth();const months=Object.keys(bm).sort();const labels=months.map(mLabel);
+  const bm=byMonth(),months=Object.keys(bm).sort(),labels=months.map(mLabel);
   dc('vol');C['vol']=new Chart(document.getElementById('chartVolMensal'),{type:'bar',
     data:{labels,datasets:[
       {label:'Negativo',data:months.map(m=>bm[m].neg),backgroundColor:'#A32D2D',borderRadius:3},
@@ -566,7 +580,9 @@ function rStars(){
 }
 
 function rSentimento(){
-  const neg=FILTERED.filter(r=>sent(r['Classificação'])==='Negativo').length,pos=FILTERED.filter(r=>sent(r['Classificação'])==='Positivo').length,neu=FILTERED.filter(r=>sent(r['Classificação'])==='Neutro').length,T=neg+pos+neu;
+  const neg=FILTERED.filter(r=>sent(r['Classificação'])==='Negativo').length,
+        pos=FILTERED.filter(r=>sent(r['Classificação'])==='Positivo').length,
+        neu=FILTERED.filter(r=>sent(r['Classificação'])==='Neutro').length,T=neg+pos+neu;
   dc('st');C['st']=new Chart(document.getElementById('chartSentimento'),{type:'doughnut',
     data:{labels:['Negativo','Neutro','Positivo'],datasets:[{data:[neg,neu,pos],backgroundColor:['#A32D2D','#E2C440','#1A6E42'],borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}});
@@ -574,7 +590,7 @@ function rSentimento(){
 }
 
 function rSentMensal(){
-  const bm=byMonth();const months=Object.keys(bm).sort();
+  const bm=byMonth(),months=Object.keys(bm).sort();
   dc('sm');C['sm']=new Chart(document.getElementById('chartSentMensal'),{type:'line',
     data:{labels:months.map(mLabel),datasets:[
       {label:'Negativo',data:months.map(m=>bm[m].neg),borderColor:'#A32D2D',backgroundColor:'rgba(163,45,45,0.07)',tension:0.3,fill:true,pointRadius:4},
@@ -612,7 +628,7 @@ function rPerfilIdioma(){
 
 function rInternos(){
   const spRaw=groupBy(FILTERED,'Status Produto');delete spRaw[''];
-  const spK=Object.keys(spRaw),spV=Object.values(spRaw),spC={'Aprovado':'#1A6E42','Reprovado':'#A32D2D'},spT=spV.reduce((a,b)=>a+b,0)||1;
+  const spK=Object.keys(spRaw),spV=Object.values(spRaw),spC={'Aprovado':'#1A6E42','Reprovado':'#A32D2D'};
   dc('sprd');C['sprd']=new Chart(document.getElementById('chartStatusProd'),{type:'doughnut',data:{labels:spK,datasets:[{data:spV,backgroundColor:spK.map(k=>spC[k]||'#888'),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}});
   document.getElementById('legend-status-prod').innerHTML=spK.map((k,i)=>`<span class="legend-item"><span class="legend-dot" style="background:${spC[k]||'#888'}"></span>${k} ${spV[i]}</span>`).join('');
   const prC={'Regular':'#1A6E42','Bloqueio Descumprimento':'#A32D2D','Bloqueio Fraude':'#B35A00','Link Desativado':'#555','Bloqueio Chargeback':'#7A1F1F','Bloqueio Múltiplo':'#4A0000','Ilícitos':'#C0392B','Saque Bloqueado':'#7A6800'};
@@ -657,8 +673,7 @@ function showTab(id,btn){
   if(btn)btn.classList.add('active');
 }
 
-fetchData(false);
-setInterval(()=>fetchData(true),REFRESH);
+loadData(false);
 </script>
 </body>
 </html>
