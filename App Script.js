@@ -22,3 +22,15 @@ function handleRequest() {
       let v = row[i];
       if (v instanceof Date) {
         v = Utilities.formatDate(v, 'America/Sao_Paulo', 'yyyy-MM-dd');
+      }
+      obj[h] = (v === null || v === undefined) ? '' : v.toString().trim();
+    });
+    return obj;
+  });
+
+  const result = JSON.stringify({ trustpilot: rowsTP });
+
+  return ContentService
+    .createTextOutput(result)
+    .setMimeType(ContentService.MimeType.JSON);
+}
