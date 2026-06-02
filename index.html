@@ -421,7 +421,16 @@ const sent=s=>{const n=parseInt(s);return n>=4?'Positivo':n===3?'Neutro':n>=1?'N
 const dc=id=>{if(C[id]){C[id].destroy();delete C[id]}};
 const groupBy=(arr,key)=>arr.reduce((a,r)=>{const k=(r[key]||'').trim();a[k]=(a[k]||0)+1;return a},{});
 const sortObj=o=>Object.fromEntries(Object.entries(o).sort((a,b)=>b[1]-a[1]));
-const getDate=r=>(r['Data da avaliação']||'').substring(0,10);
+const getDate=r=>{
+  const raw=(r['Data da avaliação']||'').toString().trim();
+  if(!raw)return'';
+  /* handles: "2025-10-20", "2025-10-20 00:00:00", "20/10/2025", "10/20/2025" */
+  const m1=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m1)return m1[1]+'-'+m1[2]+'-'+m1[3];
+  const m2=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if(m2)return m2[3]+'-'+m2[2]+'-'+m2[1];
+  return raw.substring(0,10);
+};
 const simplSP=s=>{
   if(!s)return null;
   if(s.includes('Regular'))return'Regular';
@@ -435,8 +444,12 @@ const simplSP=s=>{
   return s;
 };
 const mLabel=ym=>{
+  if(!ym||!ym.includes('-'))return ym||'';
   const[y,m]=ym.split('-');
-  return new Date(+y,+m-1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('. ','/');
+  const months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const mi=parseInt(m)-1;
+  if(mi<0||mi>11)return ym;
+  return months[mi]+'/'+String(y).substring(2);
 };
 const toast=(msg,ok=true)=>{
   const t=document.getElementById('toast');
