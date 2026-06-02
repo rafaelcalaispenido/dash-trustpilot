@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrustPilot Dashboard — Hotmart</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#1a1a1a;min-height:100vh;padding:24px 20px 60px;color:#111}
+
+/* ── LOADING ── */
+#loading-screen{position:fixed;inset:0;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;transition:opacity .4s}
+#loading-screen.hidden{opacity:0;pointer-events:none}
+.spinner{width:40px;height:40px;border:3px solid #333;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{color:#888;font-size:14px;font-weight:500}
+
+/* ── AUTH ERROR ── */
+#auth-screen{position:fixed;inset:0;background:#1a1a1a;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9998;padding:24px}
+#auth-screen.show{display:flex}
+.auth-card{background:#fff;border-radius:20px;padding:40px 44px;max-width:480px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.5)}
+.auth-logo-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:28px}
+.auth-logo-box{width:110px;height:36px;border:1.5px dashed #ddd;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;font-weight:500}
+.auth-divider{font-size:12px;color:#ccc;font-weight:500}
+.auth-tp-badge{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#111}
+.auth-tp-star{color:#00B67A;font-size:18px}
+.auth-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#111;margin-bottom:10px}
+.auth-sub{font-size:14px;color:#666;line-height:1.7;margin-bottom:28px}
+.auth-btn{display:inline-flex;align-items:center;gap:10px;background:#111;color:#fff;border:none;border-radius:10px;padding:13px 24px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:background .15s;width:100%;justify-content:center}
+.auth-btn:hover{background:#333}
+.auth-btn svg{width:18px;height:18px;flex-shrink:0}
+.auth-note{margin-top:16px;font-size:12px;color:#aaa;line-height:1.6}
+.auth-note strong{color:#555}
+.auth-retry{margin-top:14px;background:none;border:1px solid #e8e8e8;border-radius:8px;padding:9px 20px;font-family:'Inter',sans-serif;font-size:13px;color:#555;cursor:pointer;width:100%;transition:background .15s}
+.auth-retry:hover{background:#f8f8f8}
+.auth-error-detail{margin-top:12px;background:#fef9f9;border:1px solid #f5d0d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#A32D2D;text-align:left;display:none}
+.auth-error-detail.show{display:block}
+
+/* ── WRAPPER ── */
+.wrap{width:100%;max-width:1200px;margin:0 auto}
+
+/* ── HEADER ── */
+.dash-header{background:#fff;border-radius:20px;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,0,0,0.35)}
+.header-left{display:flex;align-items:center;gap:18px}
+.logo-area{width:130px;height:40px;display:flex;align-items:center;justify-content:center;border:1.5px dashed #ddd;border-radius:8px;font-size:11px;color:#aaa;font-weight:500;overflow:hidden}
+.logo-area img{width:100%;height:100%;object-fit:contain}
+.divider-v{width:1px;height:32px;background:#eee}
+.header-title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:#111}
+.header-title span{color:#007A5E}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.badge-src{font-size:11px;color:#666;background:#f4f4f4;padding:4px 10px;border-radius:20px}
+.badge-src a{color:#007A5E;text-decoration:none;font-weight:600}
+.badge-src a:hover{text-decoration:underline}
+.badge-update{font-size:11px;color:#aaa}
+.badge-live{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#1A6E42;background:#E8F5EE;padding:3px 10px;border-radius:20px}
+.badge-live::before{content:'';width:7px;height:7px;background:#1A6E42;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:#fff;border-radius:16px;padding:16px 22px;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.25)}
+.filter-bar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.filter-bar-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;display:flex;align-items:center;gap:8px}
+.filter-reset{font-size:12px;font-weight:600;color:#007A5E;background:none;border:none;cursor:pointer;padding:4px 10px;border-radius:6px;transition:background .15s}
+.filter-reset:hover{background:#E8F5EE}
+.filters-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
+.filter-group label{display:block;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.filter-group select,.filter-group input[type=date]{width:100%;padding:7px 10px;border:1px solid #e8e8e8;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;color:#111;background:#fafafa;cursor:pointer;outline:none;transition:border .15s}
+.filter-group select:focus,.filter-group input[type=date]:focus{border-color:#111}
+.filter-count{font-size:11px;color:#888;margin-top:8px}
+.filter-count strong{color:#111;font-weight:700}
+
+/* ── TABS ── */
+.nav-tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;padding-bottom:2px}
+.nav-tab{background:#2c2c2c;color:#ccc;border:none;border-radius:10px;padding:9px 16px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.nav-tab:hover{background:#3a3a3a;color:#fff}
+.nav-tab.active{background:#fff;color:#111;font-weight:700}
+
+/* ── SECTIONS ── */
+.section-panel{display:none}
+.section-panel.active{display:block}
+.section-heading{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:14px}
+
+/* ── GRIDS ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-full{margin-bottom:16px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* ── CARD ── */
+.card{background:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 4px 20px rgba(0,0,0,0.25)}
+.card-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-icon{width:20px;height:20px;border-radius:5px;background:#111;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-icon svg{width:11px;height:11px}
+
+/* ── KPI ── */
+.kpi-card{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,0.22);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,#111);border-radius:14px 14px 0 0}
+.kpi-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.kpi-value{font-size:32px;font-weight:700;color:#111;line-height:1;margin-bottom:4px}
+.kpi-sub{font-size:12px;color:#888}
+
+/* ── CHART ── */
+.chart-wrap{position:relative;width:100%}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:#666}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ── BAR ROWS ── */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-row-label{width:190px;flex-shrink:0;color:#333;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.bar-row-track{flex:1;background:#f2f2f2;border-radius:4px;height:9px;overflow:hidden}
+.bar-row-fill{height:100%;border-radius:4px;background:#111;transition:width .6s ease}
+.bar-row-val{width:40px;text-align:right;color:#555;font-weight:600;flex-shrink:0;font-size:12px}
+
+/* ── STAR ROW ── */
+.star-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.star-label{width:16px;color:#555;font-weight:600;text-align:right;font-size:13px}
+.star-icon{color:#f5a623;font-size:13px}
+.star-track{flex:1;background:#f2f2f2;border-radius:4px;height:9px;overflow:hidden}
+.star-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.star-val{width:40px;text-align:right;color:#555;font-weight:600;font-size:12px}
+
+/* ── PILL ── */
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-green{background:#E8F5EE;color:#1A6E42}
+.pill-red{background:#FEE8E8;color:#A32D2D}
+.pill-amber{background:#FEF3E2;color:#854F0B}
+.pill-gray{background:#f2f2f2;color:#555}
+
+/* ── INFO NOTE ── */
+.info-note{background:#f8f8f8;border-left:3px solid #111;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#555;line-height:1.6}
+.info-note strong{color:#111}
+
+/* ── TABLE ── */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;border-bottom:1px solid #f0f0f0}
+.data-table td{padding:9px 12px;border-bottom:1px solid #f8f8f8;color:#333}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#fafafa}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:40px 20px;color:#aaa;font-size:13px}
+.empty-state svg{width:36px;height:36px;margin-bottom:10px;opacity:.3;display:block;margin-left:auto;margin-right:auto}
+
+/* ── MANUAL CARD ── */
+.manual-card{background:#f8f8f8;border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.manual-card .val{font-size:22px;font-weight:700;color:#111;margin:4px 0}
+.manual-card .sub{font-size:12px;color:#888}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;background:#111;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .3s;z-index:9997;display:flex;align-items:center;gap:8px}
+#toast.show{opacity:1}
+
+/* ── FOOTER ── */
+.dash-footer{text-align:center;margin-top:30px;font-size:11px;color:#555;line-height:1.8}
+.dash-footer a{color:#007A5E;text-decoration:none}
+</style>
+</head>
+<body>
+
+<!-- ══ LOADING ════════════════════════════════════════════ -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-msg" id="loading-msg">Conectando à planilha Hotmart…</div>
+</div>
+
+<!-- ══ AUTH ERROR SCREEN ══════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo-row">
+      <div class="auth-logo-box">Logo Hotmart</div>
+      <span class="auth-divider">×</span>
+      <div class="auth-tp-badge">
+        <span class="auth-tp-star">★</span> TrustPilot
+      </div>
+    </div>
+    <div class="auth-title">Acesso restrito</div>
+    <div class="auth-sub">
+      Este dashboard é de uso interno da Hotmart.<br>
+      Para visualizar os dados, você precisa estar autenticado com sua conta <strong>@hotmart.com</strong> no Google.
+    </div>
+    <a id="btn-google-login" class="auth-btn" href="#" onclick="doGoogleLogin()">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Entrar com conta Hotmart
+    </a>
+    <div class="auth-error-detail" id="auth-error-detail"></div>
+    <button class="auth-retry" onclick="retryFetch()">Já estou logado — tentar novamente</button>
+    <div class="auth-note">
+      Ao clicar em "Entrar", você será redirecionado para a autenticação Google.<br>
+      <strong>Apenas contas @hotmart.com têm acesso a este dashboard.</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ═══════════════════════════════════════ -->
+<div class="wrap" id="main-content" style="display:none">
+
+  <!-- HEADER -->
+  <div class="dash-header">
+    <div class="header-left">
+      <div class="logo-area" id="logo-area">Logo Hotmart</div>
+      <div class="divider-v"></div>
+      <div class="header-title">TrustPilot <span>Dashboard</span></div>
+    </div>
+    <div class="header-right">
+      <div class="badge-src">
+        Fonte: <a href="https://docs.google.com/spreadsheets/d/14Yr7ND4E1XP-7EWNiuhzy2qpz-Gf1A_9ZiMbrgIN9Xc/edit?gid=154470158" target="_blank">Planilha de Acompanhamento</a>
+      </div>
+      <div class="badge-live">Dados em tempo real</div>
+      <div class="badge-update" id="badge-update">Out/2025 – Até hoje · Uso interno Hotmart</div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="filter-bar-top">
+      <span class="filter-bar-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" width="14" height="14"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filtros
+      </span>
+      <button class="filter-reset" onclick="resetFilters()">Limpar filtros</button>
+    </div>
+    <div class="filters-grid">
+      <div class="filter-group"><label>Data início</label><input type="date" id="f-date-start" onchange="applyFilters()"></div>
+      <div class="filter-group"><label>Data fim</label><input type="date" id="f-date-end" onchange="applyFilters()"></div>
+      <div class="filter-group"><label>Idioma</label><select id="f-idioma" onchange="applyFilters()"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Classificação</label>
+        <select id="f-stars" onchange="applyFilters()">
+          <option value="">Todas</option><option value="1">1 ★</option><option value="2">2 ★</option>
+          <option value="3">3 ★</option><option value="4">4 ★</option><option value="5">5 ★</option>
+        </select>
+      </div>
+      <div class="filter-group"><label>Perfil</label><select id="f-perfil" onchange="applyFilters()"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Motivo</label><select id="f-motivo" onchange="applyFilters()"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Status Produto</label>
+        <select id="f-status-prod" onchange="applyFilters()">
+          <option value="">Todos</option><option value="Aprovado">Aprovado</option><option value="Reprovado">Reprovado</option>
+        </select>
+      </div>
+      <div class="filter-group"><label>Sentimento</label>
+        <select id="f-sentimento" onchange="applyFilters()">
+          <option value="">Todos</option><option value="Negativo">Negativo (1–2★)</option>
+          <option value="Neutro">Neutro (3★)</option><option value="Positivo">Positivo (4–5★)</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-count">Exibindo <strong id="filter-count-val">–</strong> reviews</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('visao-geral',this)">Visão Geral</button>
+    <button class="nav-tab" onclick="showTab('sentimento',this)">Sentimento & Stars</button>
+    <button class="nav-tab" onclick="showTab('topicos',this)">Tópicos & Reply</button>
+    <button class="nav-tab" onclick="showTab('perfil-idioma',this)">Perfil & Idioma</button>
+    <button class="nav-tab" onclick="showTab('internos',this)">Dados Internos</button>
+    <button class="nav-tab" onclick="showTab('visitor',this)">Visitor Insights</button>
+    <button class="nav-tab" onclick="showTab('invitation',this)">Invitation</button>
+  </div>
+
+  <!-- ═══ VISÃO GERAL ═══════════════════════════════════ -->
+  <div id="tab-visao-geral" class="section-panel active">
+    <div class="section-heading">Visão Geral</div>
+    <div class="grid-kpi" id="kpi-row"></div>
+    <div class="grid-full">
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Volumetria Mensal</div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#A32D2D"></span>Negativo</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#E2C440"></span>Neutro</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#1A6E42"></span>Positivo</span>
+        </div>
+        <div class="chart-wrap" style="height:260px"><canvas id="chartVolMensal" role="img" aria-label="Volumetria mensal"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Reviews por Mês</div>
+        <table class="data-table"><thead><tr><th>Mês</th><th>Total</th><th>Negativo</th><th>Positivo</th></tr></thead><tbody id="tbl-mensal"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>TrustScore Estimado por Mês</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartTrustScore" role="img" aria-label="TrustScore estimado"></canvas></div>
+        <div class="info-note" style="margin-top:10px">Média ponderada das estrelas por mês. Para o TrustScore oficial consulte o painel TrustPilot.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SENTIMENTO ════════════════════════════════════ -->
+  <div id="tab-sentimento" class="section-panel">
+    <div class="section-heading">Sentimento & Stars</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>Distribuição de Estrelas</div>
+        <div id="starsRows"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>Sentimento Geral</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartSentimento" role="img" aria-label="Sentimento"></canvas></div>
+        <div class="legend" style="justify-content:center;margin-top:10px" id="legend-sent"></div>
+      </div>
+    </div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Evolução Mensal do Sentimento</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#A32D2D"></span>Negativo</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#E2C440"></span>Neutro</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#1A6E42"></span>Positivo</span>
+      </div>
+      <div class="chart-wrap" style="height:280px"><canvas id="chartSentMensal" role="img" aria-label="Sentimento mensal"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ TÓPICOS ═══════════════════════════════════════ -->
+  <div id="tab-topicos" class="section-panel">
+    <div class="section-heading">Tópicos & Reply</div>
+    <div class="card grid-full" style="margin-bottom:16px">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>Top Motivos de Contato</div>
+      <div class="grid-2" style="margin-bottom:0">
+        <div id="motivosRows"></div>
+        <div class="chart-wrap" style="height:320px"><canvas id="chartMotivos" role="img" aria-label="Motivos"></canvas></div>
+      </div>
+    </div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Reply Insights <span style="margin-left:8px;font-size:10px;font-weight:600;background:#E8F5EE;color:#1A6E42;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0">Via planilha</span></div>
+      <div class="grid-3" id="reply-cards" style="margin-bottom:0"></div>
+      <div class="info-note" style="margin-top:12px">Preencha a aba <strong>Reply Insights</strong> na planilha com os dados do painel TrustPilot. Os cards atualizam automaticamente.</div>
+    </div>
+  </div>
+
+  <!-- ═══ PERFIL & IDIOMA ═══════════════════════════════ -->
+  <div id="tab-perfil-idioma" class="section-panel">
+    <div class="section-heading">Perfil & Localização</div>
+    <div class="grid-kpi" id="kpi-perfil"></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>Distribuição por Perfil</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartPerfil" role="img" aria-label="Perfil"></canvas></div>
+        <div class="legend" style="justify-content:center;margin-top:8px" id="legend-perfil"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>Distribuição por Idioma</div>
+        <div id="idiomaRows"></div>
+      </div>
+    </div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>Idioma — Gráfico</div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chartIdioma" role="img" aria-label="Idioma"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ DADOS INTERNOS ════════════════════════════════ -->
+  <div id="tab-internos" class="section-panel">
+    <div class="section-heading">Dados Internos</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>Status do Produto</div>
+        <div class="chart-wrap" style="height:190px"><canvas id="chartStatusProd" role="img" aria-label="Status produto"></canvas></div>
+        <div class="legend" style="justify-content:center;margin-top:8px" id="legend-status-prod"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="12" cy="7" r="4"/><path d="M5.5 20a7.5 7.5 0 0 1 13 0"/></svg></span>Status do Produtor</div>
+        <div id="statusProdutorRows"></div>
+      </div>
+    </div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Status do Produtor — Gráfico</div>
+      <div class="chart-wrap" style="height:250px"><canvas id="chartStatusProdutor" role="img" aria-label="Status produtor"></canvas></div>
+    </div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>Cobertura da Planilha</div>
+      <table class="data-table"><thead><tr><th>Campo</th><th>Preenchido</th><th>% do Total</th><th>Cobertura</th></tr></thead><tbody id="tbl-cobertura"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ═══ VISITOR INSIGHTS ══════════════════════════════ -->
+  <div id="tab-visitor" class="section-panel">
+    <div class="section-heading">Visitor Insights</div>
+    <div class="info-note" style="background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.22);border-left:none;border-top:3px solid #111">
+      <strong>Como alimentar:</strong> Acesse <a href="https://businessapp.b2b.trustpilot.com/insights/visitor" target="_blank" style="color:#007A5E;font-weight:600">businessapp.b2b.trustpilot.com/insights/visitor</a>, extraia os dados e preencha a aba <strong>"Visitor Insights"</strong> criada na sua planilha. O dashboard atualiza automaticamente.
+    </div>
+    <div class="grid-kpi" id="visitor-kpis"></div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>Evolução de Visitas</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartVisitor" role="img" aria-label="Visitas"></canvas></div>
+    </div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Histórico — Visitor Insights</div>
+      <div id="visitor-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ INVITATION ════════════════════════════════════ -->
+  <div id="tab-invitation" class="section-panel">
+    <div class="section-heading">Invitation</div>
+    <div class="info-note" style="background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.22);border-left:none;border-top:3px solid #111">
+      <strong>Como alimentar:</strong> Acesse <strong>TrustPilot → Invitations → Performance</strong>, copie os dados mensais e preencha a aba <strong>"Invitation"</strong> da planilha. O dashboard atualiza automaticamente.
+    </div>
+    <div class="grid-kpi" id="invite-kpis"></div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Evolução — Invites e Conversão</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#111"></span>Invites enviados</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#007A5E"></span>Conversão %</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartInvite" role="img" aria-label="Invites"></canvas></div>
+    </div>
+    <div class="card grid-full">
+      <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Histórico — Invitation</div>
+      <div id="invite-table-wrap"></div>
+    </div>
+  </div>
+
+  <div class="dash-footer">
+    Dashboard TrustPilot · Hotmart · Uso interno &nbsp;|&nbsp;
+    Fonte: <a href="https://docs.google.com/spreadsheets/d/14Yr7ND4E1XP-7EWNiuhzy2qpz-Gf1A_9ZiMbrgIN9Xc/edit?gid=154470158" target="_blank">Planilha de Acompanhamento</a>
+  </div>
+
+</div><!-- /.wrap -->
+
+<div id="toast"></div>
+
+<script>
+const API_URL='https://script.google.com/a/macros/hotmart.com/s/AKfycbyMrm_q1-IrAoMhD60C7IaZd2jcgUcz9AE4ic6sa67mz8UDEcEOmXytz1spxXLrB7wFXg/exec';
+const REFRESH_MS=5*60*1000;
+let RAW=[],FILTERED=[],CHARTS={};
+
+/* ── UTILS ──────────────────────────────────────────── */
+function pct(v,t){return t>0?Math.round(v/t*100):0}
+function sent(stars){const s=parseInt(stars);if(s>=4)return'Positivo';if(s===3)return'Neutro';if(s>=1)return'Negativo';return'Outro'}
+function dc(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id]}}
+function groupBy(arr,key){return arr.reduce((a,r)=>{const k=(r[key]||'').trim();a[k]=(a[k]||0)+1;return a},{})}
+function sortObj(o){return Object.fromEntries(Object.entries(o).sort((a,b)=>b[1]-a[1]))}
+function simplSP(s){
+  if(!s)return null;
+  if(s.includes('Regular'))return'Regular';
+  if(s.includes('Descumprimento')&&s.includes('Chargeback'))return'Bloqueio Múltiplo';
+  if(s.includes('Descumprimento'))return'Bloqueio Descumprimento';
+  if(s.includes('fraude'))return'Bloqueio Fraude';
+  if(s.includes('Chargeback'))return'Bloqueio Chargeback';
+  if(s.includes('Ilícitos'))return'Ilícitos';
+  if(s.includes('Saque'))return'Saque Bloqueado';
+  if(s.includes('desativado'))return'Link Desativado';
+  return s;
+}
+function monthLabel(ym){
+  const[y,m]=ym.split('-');
+  return new Date(parseInt(y),parseInt(m)-1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('. ','/');
+}
+function toast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.innerHTML=(ok?'✓ ':'⚠ ')+msg;
+  t.style.background=ok?'#111':'#A32D2D';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* ── AUTH FLOW ──────────────────────────────────────── */
+function showAuthScreen(errMsg){
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.add('show');
+  if(errMsg){
+    const d=document.getElementById('auth-error-detail');
+    d.textContent='Detalhe do erro: '+errMsg;
+    d.classList.add('show');
+  }
+}
+
+function doGoogleLogin(){
+  // Abre o login Google em nova aba; após login o usuário clica "tentar novamente"
+  const loginURL='https://accounts.google.com/AccountChooser?continue='+encodeURIComponent(API_URL);
+  window.open(loginURL,'_blank','width=500,height=600');
+  setTimeout(()=>{ document.querySelector('.auth-retry').textContent='Já fiz login — tentar novamente ↻'; },1500);
+  return false;
+}
+
+function retryFetch(){
+  document.getElementById('auth-screen').classList.remove('show');
+  document.getElementById('loading-screen').classList.remove('hidden');
+  document.getElementById('loading-msg').textContent='Verificando autenticação…';
+  fetchData(false);
+}
+
+/* ── FETCH ──────────────────────────────────────────── */
+async function fetchData(silent=false){
+  try{
+    if(!silent) document.getElementById('loading-msg').textContent='Carregando dados da planilha…';
+    const res=await fetch(API_URL,{credentials:'include'});
+
+    // Se retornar HTML de login = não autenticado
+    const ct=res.headers.get('content-type')||'';
+    if(!res.ok||ct.includes('text/html')){
+      if(!silent) showAuthScreen('HTTP '+res.status+' — autenticação necessária');
+      else toast('Sessão expirada. Faça login novamente.',false);
+      return;
+    }
+
+    const json=await res.json();
+    RAW=json.trustpilot||[];
+    populateFilters();
+    applyFilters();
+    renderVisitor(json.visitor||[]);
+    renderInvitation(json.invitation||[]);
+    renderReply(json.reply||[]);
+
+    // data badge
+    if(RAW.length){
+      const dates=RAW.map(r=>r['Data da avaliação']).filter(Boolean).sort();
+      const last=new Date(dates[dates.length-1]+'T00:00:00');
+      document.getElementById('badge-update').textContent=
+        'Out/2025 – '+last.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})+' · Uso interno Hotmart';
+    }
+
+    if(!silent){
+      document.getElementById('loading-screen').classList.add('hidden');
+      document.getElementById('main-content').style.display='block';
+    } else {
+      toast('Dados atualizados');
+    }
+  }catch(err){
+    // Falha de rede ou CORS = quase certeza de não autenticado
+    const isCors=err.message.toLowerCase().includes('fetch')||err.message.toLowerCase().includes('network')||err.message.toLowerCase().includes('cors');
+    if(!silent){
+      showAuthScreen(isCors?'Falha de rede — provavelmente não autenticado com conta @hotmart.com':err.message);
+    } else {
+      toast('Falha ao atualizar. Verifique o login.',false);
+    }
+  }
+}
+
+/* ── FILTERS ────────────────────────────────────────── */
+function populateFilters(){
+  const fill=(id,vals)=>{
+    const s=document.getElementById(id);
+    const cur=s.value;
+    s.innerHTML='<option value="">Todos</option>'+[...new Set(vals)].filter(Boolean).sort().map(v=>`<option${v===cur?' selected':''}>${v}</option>`).join('');
+  };
+  fill('f-idioma',RAW.map(r=>r['Idioma']));
+  fill('f-perfil',RAW.map(r=>(r['Perfil']||'').trim()));
+  fill('f-motivo',RAW.map(r=>r['Motivo de contato']));
+}
+
+function applyFilters(){
+  const ds=document.getElementById('f-date-start').value;
+  const de=document.getElementById('f-date-end').value;
+  const idioma=document.getElementById('f-idioma').value;
+  const stars=document.getElementById('f-stars').value;
+  const perfil=document.getElementById('f-perfil').value;
+  const motivo=document.getElementById('f-motivo').value;
+  const sp=document.getElementById('f-status-prod').value;
+  const se=document.getElementById('f-sentimento').value;
+
+  FILTERED=RAW.filter(r=>{
+    if(ds&&(r['Data da avaliação']||'')<ds)return false;
+    if(de&&(r['Data da avaliação']||'')>de)return false;
+    if(idioma&&r['Idioma']!==idioma)return false;
+    if(stars&&r['Classificação']!==stars)return false;
+    if(perfil&&(r['Perfil']||'').trim()!==perfil)return false;
+    if(motivo&&r['Motivo de contato']!==motivo)return false;
+    if(sp&&r['Status Produto']!==sp)return false;
+    if(se&&sent(r['Classificação'])!==se)return false;
+    return true;
+  });
+  document.getElementById('filter-count-val').textContent=FILTERED.length.toLocaleString('pt-BR');
+  renderAll();
+}
+
+function resetFilters(){
+  ['f-date-start','f-date-end'].forEach(id=>document.getElementById(id).value='');
+  ['f-idioma','f-stars','f-perfil','f-motivo','f-status-prod','f-sentimento'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+}
+
+/* ── RENDER ALL ─────────────────────────────────────── */
+function renderAll(){
+  const T=FILTERED.length;
+  const neg=FILTERED.filter(r=>sent(r['Classificação'])==='Negativo').length;
+  const pos=FILTERED.filter(r=>sent(r['Classificação'])==='Positivo').length;
+  const neu=FILTERED.filter(r=>sent(r['Classificação'])==='Neutro').length;
+  const sumS=FILTERED.reduce((a,r)=>{const s=parseInt(r['Classificação']);return a+(isNaN(s)?0:s)},0);
+  const avg=T>0?(sumS/T).toFixed(1):0;
+
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi-card" style="--accent:#111"><div class="kpi-label">Total de Reviews</div><div class="kpi-value">${T.toLocaleString('pt-BR')}</div><div class="kpi-sub">Período filtrado</div></div>
+    <div class="kpi-card" style="--accent:#A32D2D"><div class="kpi-label">Negativas (1–2★)</div><div class="kpi-value">${neg.toLocaleString('pt-BR')}</div><div class="kpi-sub">${pct(neg,T)}% do total</div></div>
+    <div class="kpi-card" style="--accent:#1A6E42"><div class="kpi-label">Positivas (4–5★)</div><div class="kpi-value">${pos.toLocaleString('pt-BR')}</div><div class="kpi-sub">${pct(pos,T)}% do total</div></div>
+    <div class="kpi-card" style="--accent:#E2A020"><div class="kpi-label">Neutras (3★)</div><div class="kpi-value">${neu.toLocaleString('pt-BR')}</div><div class="kpi-sub">${pct(neu,T)}% do total</div></div>
+    <div class="kpi-card" style="--accent:#007A5E"><div class="kpi-label">TrustScore est.</div><div class="kpi-value">${avg}</div><div class="kpi-sub">Média ponderada</div></div>`;
+
+  renderMonthly();renderTrustScore();renderStars();renderSentimento();
+  renderSentMensal();renderMotivos();renderPerfilIdioma();renderInternos();
+}
+
+/* ── MONTHLY ────────────────────────────────────────── */
+function renderMonthly(){
+  const bm={};
+  FILTERED.forEach(r=>{
+    const d=r['Data da avaliação']||'';if(!d)return;
+    const m=d.substring(0,7);
+    if(!bm[m])bm[m]={neg:0,neu:0,pos:0};
+    const s=sent(r['Classificação']);
+    bm[m][s==='Negativo'?'neg':s==='Neutro'?'neu':'pos']++;
+  });
+  const months=Object.keys(bm).sort();
+  const labels=months.map(monthLabel);
+  dc('vol');
+  CHARTS['vol']=new Chart(document.getElementById('chartVolMensal'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Negativo',data:months.map(m=>bm[m].neg),backgroundColor:'#A32D2D',borderRadius:3},
+      {label:'Neutro',  data:months.map(m=>bm[m].neu),backgroundColor:'#E2C440',borderRadius:3},
+      {label:'Positivo',data:months.map(m=>bm[m].pos),backgroundColor:'#1A6E42',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:45}},
+              y:{stacked:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}
+  });
+  document.getElementById('tbl-mensal').innerHTML=months.map((m,i)=>{
+    const d=bm[m],tot=d.neg+d.neu+d.pos;
+    return`<tr><td>${labels[i]}</td><td><strong>${tot}</strong></td>
+      <td><span class="pill pill-red">${d.neg} (${pct(d.neg,tot)}%)</span></td>
+      <td><span class="pill pill-green">${d.pos} (${pct(d.pos,tot)}%)</span></td></tr>`;
+  }).join('');
+}
+
+/* ── TRUSTSCORE ─────────────────────────────────────── */
+function renderTrustScore(){
+  const bm={};
+  FILTERED.forEach(r=>{
+    const d=r['Data da avaliação']||'';if(!d)return;
+    const m=d.substring(0,7),s=parseInt(r['Classificação']);
+    if(isNaN(s)||s===0)return;
+    if(!bm[m])bm[m]={sum:0,cnt:0};
+    bm[m].sum+=s;bm[m].cnt++;
+  });
+  const months=Object.keys(bm).sort();
+  dc('ts');
+  CHARTS['ts']=new Chart(document.getElementById('chartTrustScore'),{
+    type:'line',
+    data:{labels:months.map(monthLabel),datasets:[{label:'TrustScore',
+      data:months.map(m=>parseFloat((bm[m].sum/bm[m].cnt).toFixed(2))),
+      borderColor:'#111',backgroundColor:'rgba(0,0,0,0.05)',tension:0.35,fill:true,pointRadius:5,pointBackgroundColor:'#111'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:45}},
+              y:{min:1,max:5,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},stepSize:1}}}}
+  });
+}
+
+/* ── STARS ──────────────────────────────────────────── */
+function renderStars(){
+  const T=FILTERED.length;
+  const c={5:0,4:0,3:0,2:0,1:0};
+  FILTERED.forEach(r=>{const s=parseInt(r['Classificação']);if(c[s]!==undefined)c[s]++});
+  const col={5:'#1A6E42',4:'#5BAF84',3:'#E2C440',2:'#E2804A',1:'#A32D2D'};
+  document.getElementById('starsRows').innerHTML=[5,4,3,2,1].map(s=>`
+    <div class="star-row">
+      <span class="star-label">${s}</span><span class="star-icon">★</span>
+      <div class="star-track"><div class="star-fill" style="width:${pct(c[s],T)}%;background:${col[s]}"></div></div>
+      <span class="star-val">${c[s]}</span>
+    </div>`).join('');
+}
+
+/* ── SENTIMENTO ─────────────────────────────────────── */
+function renderSentimento(){
+  const neg=FILTERED.filter(r=>sent(r['Classificação'])==='Negativo').length;
+  const pos=FILTERED.filter(r=>sent(r['Classificação'])==='Positivo').length;
+  const neu=FILTERED.filter(r=>sent(r['Classificação'])==='Neutro').length;
+  const T=neg+pos+neu;
+  dc('sent');
+  CHARTS['sent']=new Chart(document.getElementById('chartSentimento'),{
+    type:'doughnut',
+    data:{labels:['Negativo','Neutro','Positivo'],datasets:[{data:[neg,neu,pos],backgroundColor:['#A32D2D','#E2C440','#1A6E42'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+  });
+  document.getElementById('legend-sent').innerHTML=
+    `<span class="legend-item"><span class="legend-dot" style="background:#A32D2D"></span>Negativo ${pct(neg,T)}%</span>
+     <span class="legend-item"><span class="legend-dot" style="background:#E2C440"></span>Neutro ${pct(neu,T)}%</span>
+     <span class="legend-item"><span class="legend-dot" style="background:#1A6E42"></span>Positivo ${pct(pos,T)}%</span>`;
+}
+
+/* ── SENT MENSAL ────────────────────────────────────── */
+function renderSentMensal(){
+  const bm={};
+  FILTERED.forEach(r=>{
+    const d=r['Data da avaliação']||'';if(!d)return;
+    const m=d.substring(0,7);
+    if(!bm[m])bm[m]={neg:0,neu:0,pos:0};
+    const s=sent(r['Classificação']);
+    bm[m][s==='Negativo'?'neg':s==='Neutro'?'neu':'pos']++;
+  });
+  const months=Object.keys(bm).sort();
+  dc('sm');
+  CHARTS['sm']=new Chart(document.getElementById('chartSentMensal'),{
+    type:'line',
+    data:{labels:months.map(monthLabel),datasets:[
+      {label:'Negativo',data:months.map(m=>bm[m].neg),borderColor:'#A32D2D',backgroundColor:'rgba(163,45,45,0.07)',tension:0.3,fill:true,pointRadius:4},
+      {label:'Neutro',  data:months.map(m=>bm[m].neu),borderColor:'#E2C440',backgroundColor:'rgba(226,196,64,0.07)',tension:0.3,fill:true,pointRadius:4},
+      {label:'Positivo',data:months.map(m=>bm[m].pos),borderColor:'#1A6E42',backgroundColor:'rgba(26,110,66,0.07)',tension:0.3,fill:true,pointRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:45}},
+              y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}
+  });
+}
+
+/* ── MOTIVOS ────────────────────────────────────────── */
+function renderMotivos(){
+  const raw=groupBy(FILTERED,'Motivo de contato');delete raw[''];
+  const top=Object.fromEntries(Object.entries(sortObj(raw)).slice(0,12));
+  const maxV=Math.max(...Object.values(top))||1;
+  document.getElementById('motivosRows').innerHTML=Object.entries(top).map(([k,v])=>`
+    <div class="bar-row">
+      <span class="bar-row-label" title="${k}">${k}</span>
+      <div class="bar-row-track"><div class="bar-row-fill" style="width:${pct(v,maxV)}%"></div></div>
+      <span class="bar-row-val">${v}</span>
+    </div>`).join('');
+  const keys=Object.keys(top),vals=Object.values(top);
+  dc('mot');
+  CHARTS['mot']=new Chart(document.getElementById('chartMotivos'),{
+    type:'bar',
+    data:{labels:keys.map(k=>k.length>22?k.substring(0,21)+'…':k),datasets:[{label:'Volume',data:vals,
+      backgroundColor:keys.map((_,i)=>i===0?'#111':i===1?'#A32D2D':'#555'),borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+/* ── PERFIL & IDIOMA ────────────────────────────────── */
+function renderPerfilIdioma(){
+  const pRaw=groupBy(FILTERED.map(r=>({...r,Perfil:(r['Perfil']||'').trim()})),'Perfil');
+  delete pRaw[''];
+  const pT=Object.values(pRaw).reduce((a,b)=>a+b,0)||1;
+  const pCol={'Creator':'#111','Buyer':'#007A5E','Affiliate':'#E2A020'};
+  document.getElementById('kpi-perfil').innerHTML=Object.entries(pRaw).map(([k,v])=>`
+    <div class="kpi-card" style="--accent:${pCol[k]||'#888'}">
+      <div class="kpi-label">${k}</div><div class="kpi-value">${v}</div>
+      <div class="kpi-sub">${pct(v,pT)}% dos perfis mapeados</div>
+    </div>`).join('');
+  const pk=Object.keys(pRaw),pv=Object.values(pRaw);
+  dc('perf');
+  CHARTS['perf']=new Chart(document.getElementById('chartPerfil'),{
+    type:'doughnut',
+    data:{labels:pk,datasets:[{data:pv,backgroundColor:pk.map(k=>pCol[k]||'#888'),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+  });
+  document.getElementById('legend-perfil').innerHTML=pk.map((k,i)=>
+    `<span class="legend-item"><span class="legend-dot" style="background:${pCol[k]||'#888'}"></span>${k} ${pct(pv[i],pT)}%</span>`).join('');
+
+  const iRaw=sortObj(groupBy(FILTERED,'Idioma'));delete iRaw[''];
+  const iT=Object.values(iRaw).reduce((a,b)=>a+b,0)||1;
+  document.getElementById('idiomaRows').innerHTML=Object.entries(iRaw).map(([k,v])=>`
+    <div class="bar-row">
+      <span class="bar-row-label">${k}</span>
+      <div class="bar-row-track"><div class="bar-row-fill" style="width:${pct(v,iT)}%"></div></div>
+      <span class="bar-row-val">${v}</span>
+    </div>`).join('');
+  const ik=Object.keys(iRaw),iv=Object.values(iRaw);
+  dc('idm');
+  CHARTS['idm']=new Chart(document.getElementById('chartIdioma'),{
+    type:'bar',
+    data:{labels:ik,datasets:[{label:'Reviews',data:iv,
+      backgroundColor:['#111','#333','#555','#777','#999','#aaa','#ccc'],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}
+  });
+}
+
+/* ── INTERNOS ───────────────────────────────────────── */
+function renderInternos(){
+  const spRaw=groupBy(FILTERED,'Status Produto');delete spRaw[''];
+  const spK=Object.keys(spRaw),spV=Object.values(spRaw);
+  const spC={'Aprovado':'#1A6E42','Reprovado':'#A32D2D'};
+  const spT=spV.reduce((a,b)=>a+b,0)||1;
+  dc('sprd');
+  CHARTS['sprd']=new Chart(document.getElementById('chartStatusProd'),{
+    type:'doughnut',
+    data:{labels:spK,datasets:[{data:spV,backgroundColor:spK.map(k=>spC[k]||'#888'),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
+  });
+  document.getElementById('legend-status-prod').innerHTML=spK.map((k,i)=>
+    `<span class="legend-item"><span class="legend-dot" style="background:${spC[k]||'#888'}"></span>${k} ${spV[i]}</span>`).join('');
+
+  const prC={'Regular':'#1A6E42','Bloqueio Descumprimento':'#A32D2D','Bloqueio Fraude':'#B35A00','Link Desativado':'#555',
+             'Bloqueio Chargeback':'#7A1F1F','Bloqueio Múltiplo':'#4A0000','Ilícitos':'#C0392B','Saque Bloqueado':'#7A6800'};
+  const prRaw={};
+  FILTERED.forEach(r=>{const s=simplSP(r['Status Produtor']);if(s)prRaw[s]=(prRaw[s]||0)+1});
+  const prS=sortObj(prRaw),maxP=Math.max(...Object.values(prS))||1;
+  document.getElementById('statusProdutorRows').innerHTML=Object.entries(prS).map(([k,v])=>`
+    <div class="bar-row">
+      <span class="bar-row-label" title="${k}">${k}</span>
+      <div class="bar-row-track"><div class="bar-row-fill" style="width:${pct(v,maxP)}%;background:${prC[k]||'#555'}"></div></div>
+      <span class="bar-row-val">${v}</span>
+    </div>`).join('');
+  const pk2=Object.keys(prS),pv2=Object.values(prS);
+  dc('sprt');
+  CHARTS['sprt']=new Chart(document.getElementById('chartStatusProdutor'),{
+    type:'bar',
+    data:{labels:pk2,datasets:[{label:'Reviews',data:pv2,backgroundColor:pk2.map(k=>prC[k]||'#555'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}
+  });
+
+  const T=FILTERED.length||1;
+  const campos=[
+    ['Motivo de contato',FILTERED.filter(r=>r['Motivo de contato']).length],
+    ['Product ID',FILTERED.filter(r=>r['Product ID']).length],
+    ['Status Produto',FILTERED.filter(r=>r['Status Produto']).length],
+    ['Status Produtor',FILTERED.filter(r=>r['Status Produtor']).length],
+    ['Perfil',FILTERED.filter(r=>(r['Perfil']||'').trim()).length],
+    ['Ticket Zendesk',FILTERED.filter(r=>r['Ticket Zendesk (Trustpilot)']&&r['Ticket Zendesk (Trustpilot)']!=='-').length],
+    ['Houve reavaliação',FILTERED.filter(r=>r['Houve reavaliação?']&&r['Houve reavaliação?']!=='-').length],
+  ];
+  document.getElementById('tbl-cobertura').innerHTML=campos.map(([label,count])=>{
+    const p=pct(count,T);
+    const cl=p>60?'pill-green':p>30?'pill-amber':'pill-red';
+    const bc=p>60?'#1A6E42':p>30?'#E2A020':'#A32D2D';
+    return`<tr><td>${label}</td><td><span class="pill ${cl}">${count.toLocaleString('pt-BR')}</span></td>
+      <td>${p}%</td>
+      <td><div style="background:#f2f2f2;border-radius:4px;height:6px;overflow:hidden">
+        <div style="height:100%;border-radius:4px;background:${bc};width:${p}%"></div></div></td></tr>`;
+  }).join('');
+}
+
+/* ── VISITOR ────────────────────────────────────────── */
+function renderVisitor(data){
+  const empty=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Nenhum dado. Preencha a aba "Visitor Insights" na planilha.</div>`;
+  const kpiDash=(label,accent)=>`<div class="kpi-card" style="--accent:${accent}"><div class="kpi-label">${label}</div><div class="kpi-value" style="font-size:22px">–</div><div class="kpi-sub">Preencher na planilha</div></div>`;
+  if(!data||!data.length){
+    document.getElementById('visitor-kpis').innerHTML=kpiDash('Visitas na Página','#111')+kpiDash('Principal País','#007A5E')+kpiDash('Tempo Médio (seg)','#7A6800')+kpiDash('Reviews Visualizadas','#A32D2D');
+    dc('vis');document.getElementById('visitor-table-wrap').innerHTML=empty;return;
+  }
+  const last=data[data.length-1];
+  document.getElementById('visitor-kpis').innerHTML=`
+    <div class="kpi-card" style="--accent:#111"><div class="kpi-label">Visitas na Página</div><div class="kpi-value">${last['Visitas']||'–'}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>
+    <div class="kpi-card" style="--accent:#007A5E"><div class="kpi-label">Principal País</div><div class="kpi-value" style="font-size:20px">${last['Principal País']||'–'}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>
+    <div class="kpi-card" style="--accent:#7A6800"><div class="kpi-label">Tempo Médio (seg)</div><div class="kpi-value">${last['Tempo Médio (seg)']||'–'}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>
+    <div class="kpi-card" style="--accent:#A32D2D"><div class="kpi-label">Reviews Visualizadas</div><div class="kpi-value">${last['Reviews Visualizadas (méd)']||'–'}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>`;
+  dc('vis');
+  CHARTS['vis']=new Chart(document.getElementById('chartVisitor'),{
+    type:'line',
+    data:{labels:data.map(d=>d['Mês']),datasets:[{label:'Visitas',data:data.map(d=>parseFloat(d['Visitas'])||0),
+      borderColor:'#111',backgroundColor:'rgba(0,0,0,0.05)',tension:0.3,fill:true,pointRadius:5,pointBackgroundColor:'#111'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}
+  });
+  document.getElementById('visitor-table-wrap').innerHTML=`
+    <table class="data-table"><thead><tr><th>Mês</th><th>Visitas</th><th>Principal País</th><th>Tempo Médio</th><th>Reviews Visualizadas</th><th>Obs.</th></tr></thead>
+    <tbody>${data.map(d=>`<tr><td>${d['Mês']||''}</td><td><strong>${d['Visitas']||'–'}</strong></td>
+      <td>${d['Principal País']||'–'}</td><td>${d['Tempo Médio (seg)']||'–'}</td>
+      <td>${d['Reviews Visualizadas (méd)']||'–'}</td><td style="color:#888;font-size:12px">${d['Observações']||''}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ── INVITATION ─────────────────────────────────────── */
+function renderInvitation(data){
+  const empty=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Nenhum dado. Preencha a aba "Invitation" na planilha.</div>`;
+  const kd=(label,accent)=>`<div class="kpi-card" style="--accent:${accent}"><div class="kpi-label">${label}</div><div class="kpi-value" style="font-size:22px">–</div><div class="kpi-sub">Preencher na planilha</div></div>`;
+  if(!data||!data.length){
+    document.getElementById('invite-kpis').innerHTML=kd('Invites Enviados','#111')+kd('Taxa de Abertura','#007A5E')+kd('Cliques','#7A6800')+kd('Conversão','#A32D2D');
+    dc('inv');document.getElementById('invite-table-wrap').innerHTML=empty;return;
+  }
+  const last=data[data.length-1];
+  const fPct=(v)=>v?(v+'%'):'–';
+  document.getElementById('invite-kpis').innerHTML=`
+    <div class="kpi-card" style="--accent:#111"><div class="kpi-label">Invites Enviados</div><div class="kpi-value">${last['Invites Enviados']||'–'}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>
+    <div class="kpi-card" style="--accent:#007A5E"><div class="kpi-label">Taxa de Abertura</div><div class="kpi-value">${fPct(last['Taxa de Abertura (%)'])}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>
+    <div class="kpi-card" style="--accent:#7A6800"><div class="kpi-label">Cliques</div><div class="kpi-value">${last['Cliques']||'–'}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>
+    <div class="kpi-card" style="--accent:#A32D2D"><div class="kpi-label">Conversão</div><div class="kpi-value">${fPct(last['Conversão (%)'])}</div><div class="kpi-sub">Último: ${last['Mês']||''}</div></div>`;
+  dc('inv');
+  CHARTS['inv']=new Chart(document.getElementById('chartInvite'),{
+    type:'line',
+    data:{labels:data.map(d=>d['Mês']),datasets:[
+      {label:'Invites',data:data.map(d=>parseFloat(d['Invites Enviados'])||0),borderColor:'#111',backgroundColor:'rgba(0,0,0,0.05)',tension:0.3,fill:true,pointRadius:4,yAxisID:'y'},
+      {label:'Conversão %',data:data.map(d=>parseFloat(d['Conversão (%)'])||0),borderColor:'#007A5E',backgroundColor:'rgba(0,122,94,0.05)',tension:0.3,fill:true,pointRadius:4,yAxisID:'y1'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+              y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}},position:'left'},
+              y1:{grid:{display:false},ticks:{font:{size:11},callback:v=>v+'%'},position:'right'}}}
+  });
+  document.getElementById('invite-table-wrap').innerHTML=`
+    <table class="data-table"><thead><tr><th>Mês</th><th>Invites</th><th>Taxa Abertura</th><th>Cliques</th><th>Conversão</th><th>Obs.</th></tr></thead>
+    <tbody>${data.map(d=>`<tr><td>${d['Mês']||''}</td><td><strong>${d['Invites Enviados']||'–'}</strong></td>
+      <td>${d['Taxa de Abertura (%)']||'–'}${d['Taxa de Abertura (%)']?'%':''}</td>
+      <td>${d['Cliques']||'–'}</td>
+      <td>${d['Conversão (%)']||'–'}${d['Conversão (%)']?'%':''}</td>
+      <td style="color:#888;font-size:12px">${d['Observações']||''}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ── REPLY ──────────────────────────────────────────── */
+function renderReply(data){
+  if(!data||!data.length){
+    document.getElementById('reply-cards').innerHTML=`
+      <div class="manual-card"><div class="kpi-label">Volume de Replies</div><div class="val">–</div><div class="sub">Preencher na planilha</div></div>
+      <div class="manual-card"><div class="kpi-label">Taxa de Reply</div><div class="val">–</div><div class="sub">Preencher na planilha</div></div>
+      <div class="manual-card"><div class="kpi-label">Tempo Médio de Resposta</div><div class="val">–</div><div class="sub">Preencher na planilha</div></div>`;
+    return;
+  }
+  const last=data[data.length-1];
+  document.getElementById('reply-cards').innerHTML=`
+    <div class="manual-card"><div class="kpi-label">Volume de Replies</div><div class="val">${last['Volume de Replies']||'–'}</div><div class="sub">Último: ${last['Mês']||''}</div></div>
+    <div class="manual-card"><div class="kpi-label">Taxa de Reply</div><div class="val">${last['Taxa de Reply (%)']||'–'}${last['Taxa de Reply (%)']?'%':''}</div><div class="sub">Último: ${last['Mês']||''}</div></div>
+    <div class="manual-card"><div class="kpi-label">Tempo Médio de Resposta</div><div class="val">${last['Tempo Médio Resposta']||'–'}</div><div class="sub">Último: ${last['Mês']||''}</div></div>`;
+}
+
+/* ── TAB ────────────────────────────────────────────── */
+function showTab(id,btn){
+  document.querySelectorAll('.section-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+/* ── INIT ───────────────────────────────────────────── */
+fetchData(false);
+setInterval(()=>fetchData(true),REFRESH_MS);
+</script>
+</body>
+</html>
