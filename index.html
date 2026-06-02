@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -41,6 +41,7 @@ body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh;color:#1
 .badge-live{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#00B67A;background:rgba(0,182,122,0.12);padding:3px 10px;border-radius:20px}
 .badge-live::before{content:'';width:6px;height:6px;background:#00B67A;border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-date{font-size:11px;color:#888}
 
 /* ── WRAP ── */
 .wrap{max-width:1200px;margin:0 auto;padding:24px 24px 60px}
@@ -190,6 +191,7 @@ body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh;color:#1
   </div>
   <div class="topbar-right">
     <div class="badge-live">Tempo real</div>
+    <div class="topbar-date" id="topbar-date">Carregando…</div>
   </div>
 </div>
 
@@ -214,8 +216,8 @@ body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh;color:#1
       <button class="filter-reset" onclick="resetFilters()">Limpar filtros</button>
     </div>
     <div class="filters-grid">
-      <div class="filter-group"><label>Data início</label><input type="date" id="f-date-start" onchange="applyFilters()" autocomplete="off"></div>
-      <div class="filter-group"><label>Data fim</label><input type="date" id="f-date-end" onchange="applyFilters()" autocomplete="off"></div>
+      <div class="filter-group"><label>Data início</label><input type="date" id="f-date-start" onchange="applyFilters()"></div>
+      <div class="filter-group"><label>Data fim</label><input type="date" id="f-date-end" onchange="applyFilters()"></div>
       <div class="filter-group"><label>Idioma</label><select id="f-idioma" onchange="applyFilters()"><option value="">Todos</option></select></div>
       <div class="filter-group"><label>Classificação</label>
         <select id="f-stars" onchange="applyFilters()">
@@ -263,7 +265,7 @@ body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh;color:#1
         <span class="legend-item"><span class="legend-dot" style="background:#f39c12"></span>Neutro</span>
         <span class="legend-item"><span class="legend-dot" style="background:#00B67A"></span>Positivo</span>
       </div>
-      <div class="chart-wrap" style="height:260px"><canvas id="chartVolMensal" role="img" aria-label="Volumetria mensal"></canvas></div>
+      <div class="chart-wrap" style="height:300px"><canvas id="chartVolMensal" role="img" aria-label="Volumetria mensal"></canvas></div>
     </div></div>
     <div class="grid-2">
       <div class="card">
@@ -272,7 +274,7 @@ body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh;color:#1
       </div>
       <div class="card">
         <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>TrustScore Estimado por Mês</div>
-        <div class="chart-wrap" style="height:200px"><canvas id="chartTrustScore" role="img" aria-label="TrustScore"></canvas></div>
+        <div class="chart-wrap" style="height:240px"><canvas id="chartTrustScore" role="img" aria-label="TrustScore"></canvas></div>
         <div class="info-note" style="margin-top:10px">Média ponderada das estrelas. Para o score oficial consulte o <a href="https://businessapp.b2b.trustpilot.com" target="_blank">painel TrustPilot</a>.</div>
       </div>
     </div>
@@ -299,7 +301,7 @@ body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh;color:#1
         <span class="legend-item"><span class="legend-dot" style="background:#f39c12"></span>Neutro</span>
         <span class="legend-item"><span class="legend-dot" style="background:#00B67A"></span>Positivo</span>
       </div>
-      <div class="chart-wrap" style="height:280px"><canvas id="chartSentMensal" role="img" aria-label="Sentimento mensal"></canvas></div>
+      <div class="chart-wrap" style="height:320px"><canvas id="chartSentMensal" role="img" aria-label="Sentimento mensal"></canvas></div>
     </div>
   </div>
 
@@ -421,16 +423,7 @@ const sent=s=>{const n=parseInt(s);return n>=4?'Positivo':n===3?'Neutro':n>=1?'N
 const dc=id=>{if(C[id]){C[id].destroy();delete C[id]}};
 const groupBy=(arr,key)=>arr.reduce((a,r)=>{const k=(r[key]||'').trim();a[k]=(a[k]||0)+1;return a},{});
 const sortObj=o=>Object.fromEntries(Object.entries(o).sort((a,b)=>b[1]-a[1]));
-const getDate=r=>{
-  const raw=(r['Data da avaliação']||'').toString().trim();
-  if(!raw)return'';
-  /* handles: "2025-10-20", "2025-10-20 00:00:00", "20/10/2025", "10/20/2025" */
-  const m1=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m1)return m1[1]+'-'+m1[2]+'-'+m1[3];
-  const m2=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if(m2)return m2[3]+'-'+m2[2]+'-'+m2[1];
-  return raw.substring(0,10);
-};
+const getDate=r=>{const v=r['Data da avaliação']||r['Data']||r['data']||'';return v.toString().substring(0,10);};
 const simplSP=s=>{
   if(!s)return null;
   if(s.includes('Regular'))return'Regular';
@@ -443,13 +436,10 @@ const simplSP=s=>{
   if(s.includes('desativado'))return'Link Desativado';
   return s;
 };
+const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const mLabel=ym=>{
-  if(!ym||!ym.includes('-'))return ym||'';
   const[y,m]=ym.split('-');
-  const months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  const mi=parseInt(m)-1;
-  if(mi<0||mi>11)return ym;
-  return months[mi]+'/'+String(y).substring(2);
+  return MNAMES[+m-1]+'-'+(+y).toString().slice(-2);
 };
 const toast=(msg,ok=true)=>{
   const t=document.getElementById('toast');
@@ -485,10 +475,7 @@ function showError(msg){
 function retryLoad(){
   document.getElementById('error-screen').classList.remove('show');
   document.getElementById('loading-screen').classList.remove('hidden');
-  /* Garante que filtros de data comecem vazios independente do browser */
-document.getElementById('f-date-start').value='';
-document.getElementById('f-date-end').value='';
-loadData(false);
+  loadData(false);
 }
 
 async function loadData(silent=false){
@@ -501,7 +488,15 @@ async function loadData(silent=false){
     renderInvitation(json.invitation||[]);
     renderReply(json.reply||[]);
 
-
+    /* date badge — robusto, sem Invalid Date */
+    if(RAW.length){
+      const dates=RAW.map(r=>getDate(r)).filter(d=>d&&d.length===10).sort();
+      if(dates.length){
+        const[y,m]=dates[dates.length-1].split('-').map(Number);
+        const lastStr=new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+        document.getElementById('topbar-date').textContent='Out/2025 – '+lastStr;
+      }
+    }
 
     if(!silent){
       document.getElementById('loading-screen').classList.add('hidden');
@@ -534,13 +529,16 @@ function applyFilters(){
         sp=g('f-status-prod'),se=g('f-sentimento');
   FILTERED=RAW.filter(r=>{
     const rd=getDate(r);
-    if(ds&&rd<ds)return false;
-    if(de&&rd>de)return false;
-    if(idioma&&r['Idioma']!==idioma)return false;
-    if(stars&&r['Classificação']!==stars)return false;
+    // só aplica filtro de data se o registro tem data válida
+    if(ds&&rd&&rd.length===10&&rd<ds)return false;
+    if(de&&rd&&rd.length===10&&rd>de)return false;
+    // se filtro de data está ativo mas registro não tem data, exclui
+    if((ds||de)&&(!rd||rd.length<10))return false;
+    if(idioma&&(r['Idioma']||'').trim()!==idioma)return false;
+    if(stars&&String(r['Classificação']||'').trim()!==String(stars))return false;
     if(perfil&&(r['Perfil']||'').trim()!==perfil)return false;
-    if(motivo&&r['Motivo de contato']!==motivo)return false;
-    if(sp&&r['Status Produto']!==sp)return false;
+    if(motivo&&(r['Motivo de contato']||'').trim()!==motivo)return false;
+    if(sp&&(r['Status Produto']||'').trim()!==sp)return false;
     if(se&&sent(r['Classificação'])!==se)return false;
     return true;
   });
@@ -590,8 +588,9 @@ function rMonthly(){
       {label:'Neutro',data:months.map(m=>bm[m].neu),backgroundColor:'#f39c12',borderRadius:3},
       {label:'Positivo',data:months.map(m=>bm[m].pos),backgroundColor:'#00B67A',borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:45}},
-              y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11}}}}}});
+      layout:{padding:{bottom:8}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:12,weight:'500'},autoSkip:true,maxTicksLimit:18,maxRotation:0,minRotation:0,padding:6}},
+              y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:12}}}}}});
   document.getElementById('tbl-mensal').innerHTML=months.map((m,i)=>{
     const d=bm[m],tot=d.neg+d.neu+d.pos;
     return`<tr><td>${labels[i]}</td><td><strong>${tot}</strong></td><td><span class="pill pill-red">${d.neg} (${pct(d.neg,tot)}%)</span></td><td><span class="pill pill-green">${d.pos} (${pct(d.pos,tot)}%)</span></td></tr>`;
@@ -613,8 +612,9 @@ function rTrustScore(){
       data:months.map(m=>parseFloat((bm[m].sum/bm[m].cnt).toFixed(2))),
       borderColor:'#00B67A',backgroundColor:'rgba(0,182,122,0.08)',tension:0.35,fill:true,pointRadius:5,pointBackgroundColor:'#00B67A'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:45}},
-              y:{min:1,max:5,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},stepSize:1}}}}});
+      layout:{padding:{bottom:8}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:'500'},autoSkip:true,maxTicksLimit:18,maxRotation:0,minRotation:0,padding:6}},
+              y:{min:1,max:5,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:12},stepSize:1}}}}});
 }
 
 function rStars(){
@@ -651,8 +651,9 @@ function rSentMensal(){
       {label:'Neutro',data:months.map(m=>bm[m].neu),borderColor:'#f39c12',backgroundColor:'rgba(243,156,18,0.06)',tension:0.3,fill:true,pointRadius:4},
       {label:'Positivo',data:months.map(m=>bm[m].pos),borderColor:'#00B67A',backgroundColor:'rgba(0,182,122,0.06)',tension:0.3,fill:true,pointRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:45}},
-              y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11}}}}}});
+      layout:{padding:{bottom:8}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:'500'},autoSkip:true,maxTicksLimit:18,maxRotation:0,minRotation:0,padding:6}},
+              y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:12}}}}}});
 }
 
 function rMotivos(){
@@ -815,10 +816,8 @@ function showTab(id,btn){
   if(btn)btn.classList.add('active');
 }
 
-/* Garante que filtros de data comecem vazios independente do browser */
-document.getElementById('f-date-start').value='';
-document.getElementById('f-date-end').value='';
 loadData(false);
 </script>
 </body>
 </html>
+
